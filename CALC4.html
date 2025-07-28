@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klein Tools Wholesale & Retail Calculator</title>
+  <style>
+    body {
+      font-family: 'Roboto Condensed', Arial, sans-serif;
+      margin: 1rem;
+      background: #ffffff;
+      color: #1c1c1c;
+    }
+    h1 {
+      text-align: center;
+      color: #fdb913; /* Klein Yellow */
+      font-weight: 700;
+      letter-spacing: 1.2px;
+    }
+    .calculator {
+      max-width: 620px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+      border: 2px solid #fdb913;
+    }
+    label {
+      display: block;
+      margin-top: 1.2rem;
+      font-weight: bold;
+      color: #fdb913;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+      color: #1c1c1c;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      border-color: #fdb913;
+      outline: none;
+      box-shadow: 0 0 5px #fdb913aa;
+    }
+    .section {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 2px solid #fdb913;
+    }
+    button.clear-btn {
+      margin-top: 2rem;
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      background: #fdb913;
+      color: #1c1c1c;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      transition: background-color 0.3s;
+    }
+    button.clear-btn:hover {
+      background: #d1a70a;
+    }
+    @media (max-width: 600px) {
+      body {
+        margin: 0.5rem;
+      }
+      .calculator {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <h1>Klein Tools Calculator</h1>
+
+    <label for="baseCost">Base Cost</label>
+    <input type="text" id="baseCost" placeholder="Enter base cost" />
+
+    <div class="section">
+      <h2>Wholesale</h2>
+      <label for="whMarkup">Wholesale Markup (%)</label>
+      <input type="text" id="whMarkup" placeholder="Enter one wholesale value" />
+
+      <label for="whMargin">Wholesale Margin (%)</label>
+      <input type="text" id="whMargin" />
+
+      <label for="whProfit">Wholesale Profit ($)</label>
+      <input type="text" id="whProfit" />
+
+      <label for="whPrice">Wholesale Price</label>
+      <input type="text" id="whPrice" />
+    </div>
+
+    <div class="section">
+      <h2>Retail</h2>
+      <label for="retMarkup">Retail Markup (%)</label>
+      <input type="text" id="retMarkup" placeholder="Enter one retail value" />
+
+      <label for="retMargin">Retail Margin (%)</label>
+      <input type="text" id="retMargin" />
+
+      <label for="retProfit">Retail Profit ($)</label>
+      <input type="text" id="retProfit" />
+
+      <label for="retPrice">Retail Price</label>
+      <input type="text" id="retPrice" />
+    </div>
+
+    <button class="clear-btn" onclick="clearValues()">Clear All Values</button>
+  </div>
+
+  <script>
+    function toNum(val) {
+      if (typeof val === "string") {
+        val = val.replace(/[%,$]/g, '').trim();
+      }
+      const n = parseFloat(val);
+      return isNaN(n) ? null : n;
+    }
+
+    const baseCostEl = document.getElementById("baseCost");
+
+    const whMarkupEl = document.getElementById("whMarkup");
+    const whMarginEl = document.getElementById("whMargin");
+    const whProfitEl = document.getElementById("whProfit");
+    const whPriceEl = document.getElementById("whPrice");
+
+    const retMarkupEl = document.getElementById("retMarkup");
+    const retMarginEl = document.getElementById("retMargin");
+    const retProfitEl = document.getElementById("retProfit");
+    const retPriceEl = document.getElementById("retPrice");
+
+    let whTimeout, retTimeout;
+
+    function debounceWholesale() {
+      clearTimeout(whTimeout);
+      whTimeout = setTimeout(calculateWholesale, 1000);
+    }
+
+    function debounceRetail() {
+      clearTimeout(retTimeout);
+      retTimeout = setTimeout(calculateRetail, 1000);
+    }
+
+    function calculateWholesale() {
+      const base = toNum(baseCostEl.value);
+      const markup = toNum(whMarkupEl.value);
+      const margin = toNum(whMarginEl.value);
+      const profit = toNum(whProfitEl.value);
+      const priceInput = toNum(whPriceEl.value);
+
+      let price = null;
+      if (whMarkupEl === document.activeElement && markup !== null && base !== null) {
+        price = base * (1 + markup / 100);
+      } else if (whMarginEl === document.activeElement && margin !== null && base !== null) {
+        price = base / (1 - margin / 100);
+      } else if (whProfitEl === document.activeElement && profit !== null && base !== null) {
+        price = base + profit;
+      } else if (whPriceEl === document.activeElement && priceInput !== null) {
+        price = priceInput;
+      }
+
+      if (price !== null && base !== null) {
+        whPriceEl.value = price.toFixed(2);
+        whProfitEl.value = (price - base).toFixed(2);
+        whMarkupEl.value = (((price - base) / base) * 100).toFixed(2);
+        whMarginEl.value = (((price - base) / price) * 100).toFixed(2);
+        calculateRetail();
+      }
+    }
+
+    function calculateRetail() {
+      const wholesale = toNum(whPriceEl.value);
+      const markup = toNum(retMarkupEl.value);
+      const margin = toNum(retMarginEl.value);
+      const profit = toNum(retProfitEl.value);
+      const priceInput = toNum(retPriceEl.value);
+
+      let price = null;
+      if (retMarkupEl === document.activeElement && markup !== null && wholesale !== null) {
+        price = wholesale * (1 + markup / 100);
+      } else if (retMarginEl === document.activeElement && margin !== null && wholesale !== null) {
+        price = wholesale / (1 - margin / 100);
+      } else if (retProfitEl === document.activeElement && profit !== null && wholesale !== null) {
+        price = wholesale + profit;
+      } else if (retPriceEl === document.activeElement && priceInput !== null) {
+        price = priceInput;
+      }
+
+      if (price !== null && wholesale !== null) {
+        retPriceEl.value = price.toFixed(2);
+        retProfitEl.value = (price - wholesale).toFixed(2);
+        retMarkupEl.value = (((price - wholesale) / wholesale) * 100).toFixed(2);
+        retMarginEl.value = (((price - wholesale) / price) * 100).toFixed(2);
+      }
+    }
+
+    function clearValues() {
+      [
+        baseCostEl,
+        whMarkupEl, whMarginEl, whProfitEl, whPriceEl,
+        retMarkupEl, retMarginEl, retProfitEl, retPriceEl
+      ].forEach(el => el.value = "");
+    }
+
+    [baseCostEl].forEach(input => input.addEventListener("input", () => {
+      debounceWholesale();
+    }));
+
+    [whMarkupEl, whMarginEl, whProfitEl, whPriceEl].forEach(input =>
+      input.addEventListener("input", debounceWholesale)
+    );
+
+    [retMarkupEl, retMarginEl, retProfitEl, retPriceEl].forEach(input =>
+      input.addEventListener("input", debounceRetail)
+    );
+  </script>
+</body>
+</html>
